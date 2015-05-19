@@ -1,5 +1,3 @@
-///<reference path='../src/mutation-summary.ts'/>
-
 // Copyright 2013 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+import {
+  MutationSummary, Query, Summary, StringMap, NodeMap, NumberMap
+}  from '../src/index';
 
 interface NodeData {
   id:number;
@@ -39,7 +41,7 @@ interface TextData extends NodeData{
   textContent:string;
 }
 
-class TreeMirror {
+export class TreeMirror {
 
   private idMap:NumberMap<Node>;
 
@@ -170,7 +172,7 @@ class TreeMirror {
   }
 }
 
-class TreeMirrorClient {
+export class TreeMirrorClient {
   private nextId:number;
 
   private mutationSummary:MutationSummary;
@@ -189,7 +191,7 @@ class TreeMirrorClient {
 
     var self = this;
 
-    var queries = [{ all: true }];
+    var queries:Query[] = [{ all: true }];
 
     if (testingQueries)
       queries = queries.concat(testingQueries);

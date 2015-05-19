@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+declare var WebKitMutationObserver:any;
+
 var MutationObserverCtor;
 if (typeof WebKitMutationObserver !== 'undefined')
   MutationObserverCtor = WebKitMutationObserver;
@@ -24,15 +26,15 @@ if (MutationObserverCtor === undefined) {
   throw Error('DOM Mutation Observers are required');
 }
 
-interface StringMap<T> {
+export interface StringMap<T> {
   [key: string]: T;
 }
 
-interface NumberMap<T> {
+export interface NumberMap<T> {
   [key: number]: T;
 }
 
-class NodeMap<T> {
+export class NodeMap<T> {
 
   private static ID_PROP = '__mutation_summary_node_map_id__';
   private static nextId_:number = 1;
@@ -112,7 +114,7 @@ function enteredOrExited(changeType:Movement):boolean {
   return changeType === Movement.ENTERED || changeType === Movement.EXITED;
 }
 
-class NodeChange {
+export class NodeChange {
 
   public isCaseInsensitive:boolean;
 
@@ -199,7 +201,7 @@ class NodeChange {
   }
 }
 
-class ChildListChange {
+export class ChildListChange {
 
   public added:NodeMap<boolean>;
   public removed:NodeMap<boolean>;
@@ -216,7 +218,7 @@ class ChildListChange {
   }
 }
 
-class TreeChanges extends NodeMap<NodeChange> {
+export class TreeChanges extends NodeMap<NodeChange> {
 
   public anyParentsChanged:boolean;
   public anyAttributesChanged:boolean;
@@ -324,7 +326,7 @@ class TreeChanges extends NodeMap<NodeChange> {
   }
 }
 
-class MutationProjection {
+export class MutationProjection {
 
   private treeChanges:TreeChanges;
   private entered:Node[];
@@ -825,7 +827,7 @@ class MutationProjection {
   }
 }
 
-class Summary {
+export class Summary {
   public added:Node[];
   public removed:Node[];
   public reparented:Node[];
@@ -901,7 +903,7 @@ function escapeQuotes(value:string):string {
   return '"' + value.replace(/"/, '\\\"') + '"';
 }
 
-class Qualifier {
+export class Qualifier {
   public attrName:string;
   public attrValue:string;
   public contains:boolean;
@@ -944,7 +946,7 @@ class Qualifier {
   }
 }
 
-class Selector {
+export class Selector {
   private static nextUid:number = 1;
   private static matchesSelector:string = (function(){
     var element = document.createElement('div');
@@ -1443,7 +1445,7 @@ function elementFilterAttributes(selectors:Selector[]):string[] {
   return Object.keys(attributes);
 }
 
-interface Query {
+export interface Query {
   element?:string;
   attribute?:string;
   all?:boolean;
@@ -1453,7 +1455,7 @@ interface Query {
   elementFilter?:Selector[];
 }
 
-interface Options {
+export interface Options {
   callback:(summaries:Summary[]) => any;
   queries: Query[];
   rootNode?:Node;
@@ -1461,7 +1463,7 @@ interface Options {
   observeOwnChanges?:boolean;
 }
 
-class MutationSummary {
+export class MutationSummary {
 
   public static NodeMap = NodeMap; // exposed for use in TreeMirror.
   public static parseElementFilter = Selector.parseSelectors; // exposed for testing.
@@ -1747,4 +1749,3 @@ class MutationSummary {
     return summaries;
   }
 }
-

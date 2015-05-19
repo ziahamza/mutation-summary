@@ -71,15 +71,7 @@ var NodeMap = (function () {
     NodeMap.nextId_ = 1;
     return NodeMap;
 })();
-/**
- *  var reachableMatchableProduct = [
- *  //  STAYED_OUT,  ENTERED,     STAYED_IN,   EXITED
- *    [ STAYED_OUT,  STAYED_OUT,  STAYED_OUT,  STAYED_OUT ], // STAYED_OUT
- *    [ STAYED_OUT,  ENTERED,     ENTERED,     STAYED_OUT ], // ENTERED
- *    [ STAYED_OUT,  ENTERED,     STAYED_IN,   EXITED     ], // STAYED_IN
- *    [ STAYED_OUT,  STAYED_OUT,  EXITED,      EXITED     ]  // EXITED
- *  ];
- */
+exports.NodeMap = NodeMap;
 var Movement;
 (function (Movement) {
     Movement[Movement["STAYED_OUT"] = 0] = "STAYED_OUT";
@@ -143,10 +135,6 @@ var NodeChange = (function () {
         this.characterData = true;
         this.characterDataOldValue = oldValue;
     };
-    // Note: is it possible to receive a removal followed by a removal. This
-    // can occur if the removed node is added to an non-observed node, that
-    // node is added to the observed area, and then the node removed from
-    // it.
     NodeChange.prototype.removedFromParent = function (parent) {
         this.childList = true;
         if (this.added || this.oldParentNode)
@@ -158,11 +146,6 @@ var NodeChange = (function () {
         this.childList = true;
         this.added = true;
     };
-    // An node's oldParent is
-    //   -its present parent, if its parentNode was not changed.
-    //   -null if the first thing that happened to it was an add.
-    //   -the node it was removed from if the first thing that happened to it
-    //      was a remove.
     NodeChange.prototype.getOldParent = function () {
         if (this.childList) {
             if (this.oldParentNode)
@@ -174,6 +157,7 @@ var NodeChange = (function () {
     };
     return NodeChange;
 })();
+exports.NodeChange = NodeChange;
 var ChildListChange = (function () {
     function ChildListChange() {
         this.added = new NodeMap();
@@ -184,6 +168,7 @@ var ChildListChange = (function () {
     }
     return ChildListChange;
 })();
+exports.ChildListChange = ChildListChange;
 var TreeChanges = (function (_super) {
     __extends(TreeChanges, _super);
     function TreeChanges(rootNode, mutations) {
@@ -246,7 +231,6 @@ var TreeChanges = (function (_super) {
         }
         return isReachable;
     };
-    // A node wasReachable if its oldParent wasReachable.
     TreeChanges.prototype.getWasReachable = function (node) {
         if (node === this.rootNode)
             return true;
@@ -270,8 +254,8 @@ var TreeChanges = (function (_super) {
     };
     return TreeChanges;
 })(NodeMap);
+exports.TreeChanges = TreeChanges;
 var MutationProjection = (function () {
-    // TOOD(any)
     function MutationProjection(rootNode, mutations, selectors, calcReordered, calcOldPreviousSibling) {
         this.rootNode = rootNode;
         this.mutations = mutations;
@@ -303,13 +287,10 @@ var MutationProjection = (function () {
         this.visited.set(node, true);
         var change = this.treeChanges.get(node);
         var reachable = parentReachable;
-        // node inherits its parent's reachability change unless
-        // its parentNode was mutated.
         if ((change && change.childList) || reachable == undefined)
             reachable = this.treeChanges.reachabilityChange(node);
         if (reachable === Movement.STAYED_OUT)
             return;
-        // Cache match results for sub-patterns.
         this.matchabilityChange(node);
         if (reachable === Movement.ENTERED) {
             this.entered.push(node);
@@ -333,7 +314,6 @@ var MutationProjection = (function () {
         }
         if (reachable === Movement.STAYED_IN)
             return;
-        // reachable === ENTERED || reachable === EXITED.
         for (var child = node.firstChild; child; child = child.nextSibling) {
             this.visitNode(child, reachable);
         }
@@ -419,7 +399,7 @@ var MutationProjection = (function () {
     };
     MutationProjection.prototype.attributeChangedNodes = function (includeAttributes) {
         if (!this.treeChanges.anyAttributesChanged)
-            return {}; // No attributes mutations occurred.
+            return {};
         var attributeFilter;
         var caseInsensitiveFilter;
         if (includeAttributes) {
@@ -470,7 +450,7 @@ var MutationProjection = (function () {
     };
     MutationProjection.prototype.getCharacterDataChanged = function () {
         if (!this.treeChanges.anyCharacterDataChanged)
-            return []; // No characterData mutations occurred.
+            return [];
         var nodes = this.treeChanges.keys();
         var result = [];
         for (var i = 0; i < nodes.length; i++) {
@@ -500,8 +480,6 @@ var MutationProjection = (function () {
     };
     MutationProjection.prototype.matchabilityChange = function (node) {
         var _this = this;
-        // TODO(rafaelw): Include PI, CDATA?
-        // Only include text nodes.
         if (this.characterDataOnly) {
             switch (node.nodeType) {
                 case Node.COMMENT_NODE:
@@ -511,10 +489,8 @@ var MutationProjection = (function () {
                     return Movement.STAYED_OUT;
             }
         }
-        // No element filter. Include all nodes.
         if (!this.selectors)
             return Movement.STAYED_IN;
-        // Element filter. Exclude non-elements.
         if (node.nodeType !== Node.ELEMENT_NODE)
             return Movement.STAYED_OUT;
         var el = node;
@@ -672,6 +648,7 @@ var MutationProjection = (function () {
     };
     return MutationProjection;
 })();
+exports.MutationProjection = MutationProjection;
 var Summary = (function () {
     function Summary(projection, query) {
         var _this = this;
@@ -721,12 +698,9 @@ var Summary = (function () {
     };
     return Summary;
 })();
-// TODO(rafaelw): Allow ':' and '.' as valid name characters.
+exports.Summary = Summary;
 var validNameInitialChar = /[a-zA-Z_]+/;
 var validNameNonInitialChar = /[a-zA-Z0-9_\-]+/;
-// TODO(rafaelw): Consider allowing backslash in the attrValue.
-// TODO(rafaelw): There's got a to be way to represent this state machine
-// more compactly???
 function escapeQuotes(value) {
     return '"' + value.replace(/"/, '\\\"') + '"';
 }
@@ -760,6 +734,7 @@ var Qualifier = (function () {
     };
     return Qualifier;
 })();
+exports.Qualifier = Qualifier;
 var Selector = (function () {
     function Selector() {
         this.uid = Selector.nextUid++;
@@ -1111,7 +1086,6 @@ var Selector = (function () {
             case QUALIFIER:
             case QUALIFIER_NAME:
             case SELECTOR_SEPARATOR:
-                // Valid end states.
                 newSelector();
                 break;
             default:
@@ -1134,6 +1108,7 @@ var Selector = (function () {
     })();
     return Selector;
 })();
+exports.Selector = Selector;
 var attributeFilterPattern = /^([a-zA-Z:_]+[a-zA-Z0-9_\-:\.]*)$/;
 function validateAttribute(attribute) {
     if (typeof attribute != 'string')
@@ -1189,7 +1164,7 @@ var MutationSummary = (function () {
         this.calcReordered = this.options.queries.some(function (query) {
             return query.all;
         });
-        this.queryValidators = []; // TODO(rafaelw): Shouldn't always define this.
+        this.queryValidators = [];
         if (MutationSummary.createQueryValidator) {
             this.queryValidators = this.options.queries.map(function (query) {
                 return MutationSummary.createQueryValidator(_this.root, query);
@@ -1208,15 +1183,13 @@ var MutationSummary = (function () {
         var attributeFilter;
         function observeAttributes(attributes) {
             if (observerOptions.attributes && !attributeFilter)
-                return; // already observing all.
+                return;
             observerOptions.attributes = true;
             observerOptions.attributeOldValue = true;
             if (!attributes) {
-                // observe all.
                 attributeFilter = undefined;
                 return;
             }
-            // add to observed.
             attributeFilter = attributeFilter || {};
             attributes.forEach(function (attribute) {
                 attributeFilter[attribute] = true;
@@ -1265,14 +1238,12 @@ var MutationSummary = (function () {
         };
         for (var i = 0; i < options.queries.length; i++) {
             var request = options.queries[i];
-            // all
             if (request.all) {
                 if (Object.keys(request).length > 1)
                     throw Error('Invalid request option. all has no options.');
                 opts.queries.push({ all: true });
                 continue;
             }
-            // attribute
             if ('attribute' in request) {
                 var query = {
                     attribute: validateAttribute(request.attribute)
@@ -1283,7 +1254,6 @@ var MutationSummary = (function () {
                 opts.queries.push(query);
                 continue;
             }
-            // element
             if ('element' in request) {
                 var requestOptionCount = Object.keys(request).length;
                 var query = {
@@ -1299,7 +1269,6 @@ var MutationSummary = (function () {
                 opts.queries.push(query);
                 continue;
             }
-            // characterData
             if (request.characterData) {
                 if (Object.keys(request).length > 1)
                     throw Error('Invalid request option. characterData has no options.');
@@ -1358,7 +1327,6 @@ var MutationSummary = (function () {
             this.checkpointQueryValidators();
         if (this.changesToReport(summaries))
             this.callback(summaries);
-        // disconnect() may have been called during the callback.
         if (!this.options.observeOwnChanges && this.connected) {
             this.checkpointQueryValidators();
             this.observer.observe(this.root, this.observerOptions);
@@ -1383,8 +1351,8 @@ var MutationSummary = (function () {
         this.connected = false;
         return summaries;
     };
-    MutationSummary.NodeMap = NodeMap; // exposed for use in TreeMirror.
-    MutationSummary.parseElementFilter = Selector.parseSelectors; // exposed for testing.
+    MutationSummary.NodeMap = NodeMap;
+    MutationSummary.parseElementFilter = Selector.parseSelectors;
     MutationSummary.optionKeys = {
         'callback': true,
         'queries': true,
@@ -1394,3 +1362,4 @@ var MutationSummary = (function () {
     };
     return MutationSummary;
 })();
+exports.MutationSummary = MutationSummary;

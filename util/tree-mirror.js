@@ -1,4 +1,17 @@
-///<reference path='../src/mutation-summary.ts'/>
+// Copyright 2013 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+var index_1 = require('../src/index');
 var TreeMirror = (function () {
     function TreeMirror(root, delegate) {
         this.root = root;
@@ -12,10 +25,6 @@ var TreeMirror = (function () {
     };
     TreeMirror.prototype.applyChanged = function (removed, addedOrMoved, attributes, text) {
         var _this = this;
-        // NOTE: Applying the changes can result in an attempting to add a child
-        // to a parent which is presently an ancestor of the parent. This can occur
-        // based on random ordering of moves. The way we handle this is to first
-        // remove all changed nodes from their parents, then apply.
         addedOrMoved.forEach(function (data) {
             var node = _this.deserializeNode(data);
             var parent = _this.deserializeNode(data.parentNode);
@@ -105,13 +114,14 @@ var TreeMirror = (function () {
     };
     return TreeMirror;
 })();
+exports.TreeMirror = TreeMirror;
 var TreeMirrorClient = (function () {
     function TreeMirrorClient(target, mirror, testingQueries) {
         var _this = this;
         this.target = target;
         this.mirror = mirror;
         this.nextId = 1;
-        this.knownNodes = new MutationSummary.NodeMap();
+        this.knownNodes = new index_1.MutationSummary.NodeMap();
         var rootId = this.serializeNode(target).id;
         var children = [];
         for (var child = target.firstChild; child; child = child.nextSibling)
@@ -121,7 +131,7 @@ var TreeMirrorClient = (function () {
         var queries = [{ all: true }];
         if (testingQueries)
             queries = queries.concat(testingQueries);
-        this.mutationSummary = new MutationSummary({
+        this.mutationSummary = new index_1.MutationSummary({
             rootNode: target,
             callback: function (summaries) {
                 _this.applyChanged(summaries);
@@ -185,12 +195,12 @@ var TreeMirrorClient = (function () {
     TreeMirrorClient.prototype.serializeAddedAndMoved = function (added, reparented, reordered) {
         var _this = this;
         var all = added.concat(reparented).concat(reordered);
-        var parentMap = new MutationSummary.NodeMap();
+        var parentMap = new index_1.MutationSummary.NodeMap();
         all.forEach(function (node) {
             var parent = node.parentNode;
             var children = parentMap.get(parent);
             if (!children) {
-                children = new MutationSummary.NodeMap();
+                children = new index_1.MutationSummary.NodeMap();
                 parentMap.set(parent, children);
             }
             children.set(node, true);
@@ -218,7 +228,7 @@ var TreeMirrorClient = (function () {
     };
     TreeMirrorClient.prototype.serializeAttributeChanges = function (attributeChanged) {
         var _this = this;
-        var map = new MutationSummary.NodeMap();
+        var map = new index_1.MutationSummary.NodeMap();
         Object.keys(attributeChanged).forEach(function (attrName) {
             attributeChanged[attrName].forEach(function (element) {
                 var record = map.get(element);
@@ -254,3 +264,4 @@ var TreeMirrorClient = (function () {
     };
     return TreeMirrorClient;
 })();
+exports.TreeMirrorClient = TreeMirrorClient;

@@ -1,6 +1,7 @@
 ///<reference path='third_party/DefinitelyTyped/chai/chai-assert.d.ts'/>
-///<reference path='../src/mutation-summary.ts'/>
-///<reference path='../util/tree-mirror.ts'/>
+
+import { MutationSummary, Options, Query, Summary } from '../src/index';
+import { TreeMirror, TreeMirrorClient } from '../util/tree-mirror';
 
 declare var suite:(s:string, a:any)=>any;
 declare var test:(s:string, a:any)=>any;
@@ -219,7 +220,8 @@ suite('Mutation Summary', function() {
   });
 
   test('Attribute -- Array proto changed', function() {
-    Array.prototype.foo = 'bar';
+    var AProto = <any>Array.prototype;
+    AProto.foo = 'bar';
 
     var div = document.createElement('div');
     testDiv.appendChild(div);
@@ -259,7 +261,7 @@ suite('Mutation Summary', function() {
     div2.removeAttribute('foo');
     div2.setAttribute('foo', 'baz2');
     assertNothingReported();
-    delete Array.prototype.foo;
+    delete AProto.foo;
   });
 
   test('Attribute Case Insensitive', function() {

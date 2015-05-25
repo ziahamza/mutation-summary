@@ -2,7 +2,7 @@
   "name": "mutation-summary",
   "version": "0.0.0",
   "description": "Makes observing the DOM fast and easy",
-  "main": "src/mutation-summary.js",
+  "main": "src/index.js",
   "directories": {
     "example": "examples",
     "test": "tests"
